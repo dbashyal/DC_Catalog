@@ -1,0 +1,134 @@
+<?php
+$attributeCode = $this->getDataOr('attribute_code', 'manufacturer');
+$image_only = $this->getDataOr('image_only', false);
+$text_only = $this->getDataOr('text_only', false);
+$img_resize_to = $this->getDataOr('img_resize_to', '');
+$img_align = $this->getDataOr('img_align', '');
+$banner_resize_to = $this->getDataOr('banner_resize_to', '');
+$banner_align = $this->getDataOr('banner_align', 'block');
+$separator = $this->getDataOr('separator', ', ');
+
+
+$_helper = $this->helper('dc_catalog/attributeInfo');
+$attributeOptions = $this->getProduct()->getData($attributeCode);
+
+if (strpos($attributeOptions, ',') === false) {
+	$attributeOptions = array($attributeOptions);
+} else {
+	$attributeOptions = explode(',', $attributeOptions);
+}
+
+$output = array();
+$hasImages = $hasText = false;
+
+for ($i = 0; $i < sizeof($attributeOptions); $i++) {
+	$optionId = $attributeOptions[$i];
+
+	/* @var $_attr DC_Catalog_Model_Manufacturer */
+	$_attr = $this->getAttributeInfo($attributeCode, $optionId);
+
+	$thumbnail_width  = false;
+	$thumbnail_height = false;
+
+	$_imgHtml   = '';
+
+	if($_attr) {
+		if(!$text_only) {
+			//in the product view page, we try to display the banner if it exists
+			//otherwise, go for the manufacturer logo
+			$_img = false;
+			if ($_imgUrl = $_attr->getImageUrl('banner')) {
+				$_img = $_attr->getBanner();
+				$img_resize_to = $banner_resize_to;
+				$img_align = $banner_align;
+			} elseif ($_imgUrl = $_attr->getImageUrl()) {
+				$_img = $_attr->getImage();
+			}
+
+			if ($_img) {
+				$file = Mage::getBaseDir('media'). DS . 'catalog' . DS . 'attribute' . DS .$_img;
+
+		        $imageInfo = getimagesize($file);
+		        $width  = $imageInfo[0];
+		        $height = $imageInfo[1];
+
+				if($img_resize_to) {
+					$newSizes = explode('x', strtolower($img_resize_to));
+					$thumbnail_width  = $newSizes[0];
+					$thumbnail_height = isset($newSizes[1]) ? $newSizes[1] : false;
+
+					if($thumbnail_width || $thumbnail_height) {
+			        	//keeps aspect ratio for the logo
+						if($thumbnail_width == 0) {
+							$thumbnail_width = intval($thumbnail_height/$height*$width);
+						}
+						if($thumbnail_height == 0) {
+							$thumbnail_height = intval($thumbnail_width/$width*$height);
+						}
+
+						if ($height) $thumbnail_width  = min($thumbnail_width,  intval($width * $thumbnail_height / $height));
+						if ($width)  $thumbnail_height = min($thumbnail_height, intval($height * $thumbnail_width / $width));
+
+
+			        	//resizer looks in /media/catalog/product, our images are in /media/catalog/attribute
+			        	//so we go one level above product with ../
+				        $_imgUrl = Mage::helper('dc_catalog/image')
+				        	->initImage($attributeCode, $_img)
+				        	->resize($thumbnail_width, $thumbnail_height)
+				        	->__toString();
+					}
+				}
+
+				if ('block' == $img_align) {
+					$_imgHtml = '
+						<a href="'.$this->getUrl('/').$_attr->getAttributeCode().'/'.$_attr->getIdentifier().'"
+						title="'.$this->htmlEscape($_attr->getName()).'"
+						style="display: block; background:url(\''.$_imgUrl.'\') no-repeat top center; height: '.($thumbnail_height ? $thumbnail_height : $height).'px">
+						</a>';
+				} else {
+					$_imgHtml = '<img
+						width="'.($thumbnail_width ? $thumbnail_width : $width) .'"
+						src="'.$_imgUrl.'"
+						alt="'.$this->htmlEscape($_attr->getValue()).'"
+						title="'.$this->htmlEscape($_attr->getValue()).'"
+						align="'.$img_align.'"
+						class="product-attribute-image" />';
+				}
+			}
+		}
+
+		if ($_imgHtml && (!$text_only)) {
+			//looks like we have a logo to show
+			if ('block' == $img_align) {
+				$output[] = $_imgHtml;
+			} else {
+				$output[] = '<a
+					href="'. $this->getUrl('/').$_attr->getAttributeCode().'/'.$_attr->getIdentifier().'"
+					title="'. $_attr->getName().'">'. $_imgHtml.'</a>';
+			}
+			$hasImages = true;
+		} elseif (!$image_only) {
+			$output[] = '<a
+					href="'. $this->getUrl('/').$_attr->getAttributeCode().'/'.$_attr->getIdentifier().'"
+					title="'. $this->htmlEscape($_attr->getName()).'">'.$_attr->getValue().'</a>';
+			$hasText = true;
+		}
+	}
+
+}
+
+if (sizeof($output) > 0) {
+	if ($hasText && !$hasImages && !$image_only) {
+		?><div class="attribute-specs">
+			<span class="label"><?php echo $this->htmlEscape($_attr->getFrontendLabel()) ?></span>
+			<span class="data"><?php
+					echo join($separator, $output);
+			?></span>
+		</div>
+		<?php
+	} else {
+		echo join($separator, $output);
+	}
+}
+
+?>

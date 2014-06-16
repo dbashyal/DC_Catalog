@@ -1,0 +1,92 @@
+<?php
+
+	if (!$attribute_code = $this->getData('attribute_code')) {
+		if (!$attribute_code = $this->getData('default_attribute_code')) {
+			$attribute_code = 'manufacturer';
+		}
+	}
+
+	$_items = $this->getValuesCollection(true)->getItems();
+
+	$_helper = $this->helper('dc_catalog/attributeInfo');
+
+	$columns = 5;
+	$maxItems = 5;
+
+?>
+<?php if (count($_items)):?>
+
+<div class="block attribute-values-block">
+	<div class="block-title">
+	    <h2><?php echo __('Favorite '.$this->getAttributeCode().'s') ?></h2>
+	</div>
+	<div class="block-content">
+		<ol>
+		<?php foreach ($_items as $item):?>
+		<li>
+<?php
+
+	$_imgHtml   = '';
+	$thumbnail_width  = 100;
+	$thumbnail_height = 50;
+
+	if (($file = Mage::getBaseDir('media'). DS . 'catalog' . DS . 'attribute' . DS .$item->getImage()) && is_file($file)) {
+	    $imageInfo = getimagesize($file);
+        $width  = $imageInfo[0];
+        $height = $imageInfo[1];
+
+        $baseDir = Mage::getSingleton('catalog/product_media_config')->getBaseMediaPath();
+
+		if ($height) $thumbnail_width  = min($thumbnail_width,  intval($width * $thumbnail_height / $height));
+		if ($width)  $thumbnail_height = min($thumbnail_height, intval($height * $thumbnail_width / $width));
+
+
+        //resizer looks in /media/catalog/product, our images are in /media/catalog/attribute
+        //so we go one level above product with ../
+        $_imgUrl = Mage::helper('dc_catalog/image')
+        	->initImage($attribute_code, $item->getImage())
+        	->resize($thumbnail_width, $thumbnail_height)
+        	->__toString();
+
+		$_imgHtml = '<img
+			width="'.($thumbnail_width ? $thumbnail_width : $width) .'"
+	        src="'.$_imgUrl.'"
+	        alt="'.$this->htmlEscape($item->getValue()).'"
+	        title="'.$this->htmlEscape($item->getValue()).'"
+	        class="attribute-values-logo" />';
+	}
+
+	if ($_imgHtml) {
+		//looks like we have a logo to show
+		?><a
+			href="<?php echo $this->getUrl('/').$item->getAttributeCode().'/'.$item->getIdentifier(); ?>"
+			title="<?php echo $item->getValue()?>"><?php
+			echo $_imgHtml;
+		?></a><?php
+	} else {
+		?>
+		<a
+				href="<?php echo $this->getUrl('/').$item->getAttributeCode().'/'.$item->getIdentifier(); ?>"
+				title="<?php echo $this->htmlEscape($item->getName())?>"><?php
+					echo $item->getValue();
+		?></a>
+		<?php
+	}
+	?>
+
+		</li>
+		<?php endforeach; ?>
+
+		<li class="view-all">
+			<?php //echo __('or') ?> <a href="<?php echo $this->getUrl('/').$item->getAttributeCode().'/'; ?>">
+    			<strong><?php echo __('View all '.$this->getAttributeCode().'s') ?></strong>
+			</a>
+		</li>
+		</ol>
+
+	</div>
+	<div class="block-footer"/>
+	</div>
+</div>
+
+<?php endif;?>

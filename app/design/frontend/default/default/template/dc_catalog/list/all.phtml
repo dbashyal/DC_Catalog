@@ -1,0 +1,80 @@
+<?php
+
+	$_items = $this->getValuesCollection()->retrieveAll()->getItems();
+
+	$attribute_code = $this->getData('attribute_code');
+	$_helper = $this->helper('dc_catalog/attributeInfo');
+
+	$columns = 5;
+
+?>
+<?php if (count($_items)):?>
+<div class="attribute-values-all">
+    <h3><?php echo __('All '.$this->getAttributeCode().'s') ?></h3>
+	<table class="data-table">
+		<?php for ($i = 0; $i < $columns; $i++) : ?>
+			<col width="<?php echo floor(100 / $columns)?>%" />
+		<?php endfor; ?>
+		<tbody>
+			<tr>
+			<?php $i = 0; ?>
+    		<?php foreach ($_items as $item):?>
+				<td class="attribute-value-logo">
+<?php
+
+	$_imgHtml   = '';
+	$thumbnail_width  = 50;
+	$thumbnail_height = 25;
+
+	if (($file = Mage::getBaseDir('media'). DS . 'catalog' . DS . 'attribute' . DS .$item->getImage()) && is_file($file)) {
+        $imageInfo = getimagesize($file);
+        $width  = $imageInfo[0];
+        $height = $imageInfo[1];
+
+        $baseDir = Mage::getSingleton('catalog/product_media_config')->getBaseMediaPath();
+
+		if ($height) $thumbnail_width  = min($thumbnail_width,  intval($width * $thumbnail_height / $height));
+		if ($width)  $thumbnail_height = min($thumbnail_height, intval($height * $thumbnail_width / $width));
+
+
+        //resizer looks in /media/catalog/product, our images are in /media/catalog/attribute
+        //so we go one level above product with ../
+        $_imgUrl = Mage::helper('dc_catalog/image')
+        	->initImage($attribute_code, $item->getImage())
+        	->resize($thumbnail_width, $thumbnail_height)
+        	->__toString();
+
+		$_imgHtml = '<img
+			width="'.($thumbnail_width ? $thumbnail_width : $width) .'"
+	        src="'.$_imgUrl.'"
+	        alt="'.$this->htmlEscape($item->getValue()).'"
+	        title="'.$this->htmlEscape($item->getValue()).'"
+	        class="attribute-values-logo" />';
+	}
+
+	if ($_imgHtml) {
+		//looks like we have a logo to show
+		?><a
+			href="<?php echo $this->getUrl('/').$item->getAttributeCode().'/'.$item->getIdentifier(); ?>"
+			title="<?php echo $item->getName()?>"><?php
+			echo $_imgHtml;
+		?></a><?php
+	}
+		?>
+		<a
+				href="<?php echo $this->getUrl('/').$item->getAttributeCode().'/'.$item->getIdentifier(); ?>"
+				title="<?php echo $this->htmlEscape($item->getName())?>"><?php
+					echo $item->getValue();
+		?></a>
+				</td>
+
+	<?php if (0 == (++$i % $columns)) : ?>
+			</tr><tr>
+	<?php endif; ?>
+
+			<?php endforeach; ?>
+			</tr>
+		</tbody>
+	</table>
+</div>
+<?php endif;?>

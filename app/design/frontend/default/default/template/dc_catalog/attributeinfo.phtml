@@ -1,0 +1,29 @@
+<?php
+	$_attr = $this->getAttributeInfo();
+
+	$_externalUrlLabel=$_attr->getExternalUrlLabel();
+?>
+<div class="category-title category-head attribute-title">
+	<h2><?php echo $this->htmlEscape($_attr->getName()) ?></h2>
+</div>
+
+<?php if (1 == $this->getCurrentPage()): ?>
+
+	<?php
+		echo $this->getChildHtml('attributeinfo.logo');
+	?>
+
+	<?php if($_description=$this->getDescription()): ?>
+		<p class="attribute-description"><?php echo $_description; ?></p>
+	<?php endif; ?>
+
+	<?php if(($_externalUrl=$_attr->getExternalUrl()) > ''): ?>
+		<p class="attribute-external-url"><a href="<?php echo $_externalUrl; ?>" target="_blank" title="<?php echo $_externalUrlLabel?>">
+			<?php echo ($_externalUrlLabel > '') ? $_externalUrlLabel : $_externalUrl ?>
+		</a></p>
+	<?php endif; ?>
+
+<?php endif; ?>
+
+
+<?php echo $this->getProductListHtml() ?>
