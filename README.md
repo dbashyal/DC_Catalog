@@ -5,6 +5,6 @@ This is abandoned extension by developer by Adi @  http://dot.collective.ro/mage
 
 Took a while to find the source code, so archived here, so anyone can use it.
 
-This extension is called Magento attribute info pages manager. You can create unique magento pages for your attribute values.
+This extension is called Magento attribute info pages manager (Shop by brand / manufacturer). You can create unique magento pages for your attribute values.
 
 For more information visit author's Url listed above.
