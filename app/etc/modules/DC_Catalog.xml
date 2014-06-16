@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+
+	<modules>
+		<DC_Catalog>
+			<active>true</active>
+			<codePool>community</codePool>
+		</DC_Catalog>
+	</modules>
+
+</config>
